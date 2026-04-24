@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pull Lamp Login</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Prata&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-night: #06050d;
+      --bg-deep: #120e21;
+      --text: #f7f2e9;
+      --muted: rgba(247, 242, 233, 0.72);
+      --accent: #f8c774;
+      --accent-strong: #ffdfa2;
+      --panel: rgba(21, 16, 33, 0.84);
+      --panel-border: rgba(255, 240, 199, 0.2);
+      --input-bg: rgba(255, 255, 255, 0.06);
+      --input-border: rgba(255, 255, 255, 0.13);
+      --input-focus: rgba(248, 199, 116, 0.78);
+      --button-text: #201612;
+      --glow-opacity: 0;
+      --beam-opacity: 0.03;
+      --backdrop-opacity: 0;
+      --panel-opacity: 0;
+      --panel-offset: 60px;
+      --room-brightness: 0.84;
+      --cord-pull: 0px;
+      --lamp-swing: -6deg;
+    }
+
+    body.is-on {
+      --glow-opacity: 1;
+      --beam-opacity: 1;
+      --backdrop-opacity: 1;
+      --panel-opacity: 1;
+      --panel-offset: 0px;
+      --room-brightness: 1.06;
+      --cord-pull: 24px;
+      --lamp-swing: 4deg;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      height: 100%;
+      margin: 0;
+    }
+
+    body {
+      font-family: "Plus Jakarta Sans", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 20% 16%, rgba(248, 199, 116, 0.08), transparent 24%),
+        radial-gradient(circle at 82% 20%, rgba(106, 77, 180, 0.12), transparent 24%),
+        linear-gradient(135deg, var(--bg-night) 0%, var(--bg-deep) 52%, #04020a 100%);
+      overflow: hidden;
+      transition: filter 700ms ease, background 700ms ease;
+    }
+
+    body::before,
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    body::before {
+      background:
+        radial-gradient(circle at 18% 14%, rgba(255, 226, 165, calc(var(--glow-opacity) * 0.34)), transparent 16%),
+        radial-gradient(circle at 40% 38%, rgba(255, 214, 130, calc(var(--glow-opacity) * 0.18)), transparent 28%);
+      mix-blend-mode: screen;
+    }
+
+    body::after {
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+      background-size: 110px 110px;
+      opacity: 0.18;
+      mask-image: radial-gradient(circle at center, black 54%, transparent 95%);
+    }
+
+    .scene {
+      position: relative;
+      min-height: 100%;
+      padding: 28px 32px;
+      display: flex;
+      align-items: stretch;
+      justify-content: center;
+      isolation: isolate;
+      filter: brightness(var(--room-brightness));
+      transition: filter 700ms ease;
+    }
+
+    .backdrop {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 18% 14%, rgba(255, 229, 170, calc(var(--backdrop-opacity) * 0.18)), transparent 18%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 24%, rgba(0, 0, 0, 0.34) 84%),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.02), transparent 16%, transparent 84%, rgba(255, 255, 255, 0.02));
+    }
+
+    .beam {
+      position: absolute;
+      left: 8%;
+      top: 0;
+      width: min(72vw, 1040px);
+      height: min(90vh, 960px);
+      background: linear-gradient(180deg, rgba(255, 231, 173, 0.76) 0%, rgba(255, 225, 160, 0.16) 24%, rgba(255, 225, 160, 0) 78%);
+      clip-path: polygon(14% 0, 24% 0, 100% 100%, 0 100%);
+      filter: blur(10px);
+      opacity: var(--beam-opacity);
+      transition: opacity 700ms ease;
+      mix-blend-mode: screen;
+      pointer-events: none;
+    }
+
+    .frame {
+      position: relative;
+      z-index: 1;
+      width: min(1240px, 100%);
+      display: grid;
+      grid-template-columns: 0.98fr 1.02fr;
+      gap: 48px;
+      align-items: center;
+    }
+
+    .hero {
+      position: relative;
+      min-height: 700px;
+      padding: 300px 18px 42px 18px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+    }
+
+    .lamp-area {
+      position: absolute;
+      left: 14px;
+      top: -10px;
+      width: 310px;
+      height: 330px;
+      pointer-events: none;
+    }
+
+    .lamp-rig {
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+
+    .lamp-cable {
+      position: absolute;
+      top: 0;
+      left: 132px;
+      width: 3px;
+      height: 120px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(223, 203, 163, 0.74));
+      border-radius: 999px;
+      opacity: 0.82;
+    }
+
+    .lamp-cap {
+      position: absolute;
+      top: 108px;
+      left: 112px;
+      width: 42px;
+      height: 16px;
+      border-radius: 999px;
+      background: linear-gradient(180deg, #f1d59b 0%, #bd8751 100%);
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+      transform: rotate(var(--lamp-swing));
+      transform-origin: center center;
+      transition: transform 420ms cubic-bezier(0.2, 0.9, 0.2, 1);
+    }
+
+    .lamp-shade {
+      position: absolute;
+      top: 118px;
+      left: 72px;
+      width: 122px;
+      height: 72px;
+      border-radius: 12px 12px 68px 68px;
+      background:
+        linear-gradient(180deg, rgba(255, 244, 214, 0.92), rgba(245, 207, 132, 0.9) 24%, rgba(162, 110, 42, 0.92) 100%);
+      box-shadow:
+        inset 0 6px 10px rgba(255, 255, 255, 0.56),
+        inset 0 -12px 18px rgba(123, 78, 20, 0.42),
+        0 14px 34px rgba(0, 0, 0, 0.26);
+      transform: rotate(var(--lamp-swing));
+      transform-origin: 50% 0;
+      transition: transform 420ms cubic-bezier(0.2, 0.9, 0.2, 1);
+    }
+
+    .lamp-bulb {
+      position: absolute;
+      top: 154px;
+      left: 112px;
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 32%, rgba(255, 254, 245, 0.96), rgba(255, 233, 176, 0.94) 42%, rgba(255, 201, 94, 0.74) 74%, rgba(255, 201, 94, 0.12) 100%);
+      box-shadow:
+        0 0 18px rgba(255, 217, 145, 0.22),
+        0 0 60px rgba(255, 211, 122, calc(0.12 + var(--glow-opacity) * 0.34)),
+        0 0 120px rgba(255, 206, 116, calc(0.04 + var(--glow-opacity) * 0.24));
+      opacity: calc(0.28 + var(--glow-opacity) * 0.72);
+      transition: opacity 520ms ease, box-shadow 520ms ease;
+    }
+
+    .lamp-pool {
+      position: absolute;
+      left: -48px;
+      top: 150px;
+      width: 620px;
+      height: 420px;
+      background: radial-gradient(circle at 24% 4%, rgba(255, 220, 150, 0.3), rgba(255, 220, 150, 0.07) 34%, rgba(255, 220, 150, 0) 68%);
+      opacity: calc(var(--glow-opacity) * 0.88);
+      pointer-events: none;
+      filter: blur(6px);
+      transition: opacity 600ms ease;
+    }
+
+    .pull-cord {
+      position: absolute;
+      top: 136px;
+      left: 150px;
+      width: 34px;
+      height: 174px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      cursor: pointer;
+      pointer-events: auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+    }
+
+    .pull-cord:focus-visible {
+      outline: 2px solid rgba(255, 223, 162, 0.92);
+      outline-offset: 6px;
+      border-radius: 999px;
+    }
+
+    .cord-line {
+      width: 2px;
+      height: 118px;
+      border-radius: 999px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(207, 180, 130, 0.82));
+      transform: translateY(calc(var(--cord-pull) * 0.45));
+      transition: transform 280ms ease;
+    }
+
+    .cord-handle {
+      width: 28px;
+      height: 28px;
+      margin-top: 6px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 34% 30%, #fff0cc, #f1c775 56%, #af7532 100%);
+      box-shadow:
+        inset 0 2px 4px rgba(255, 255, 255, 0.7),
+        0 8px 18px rgba(0, 0, 0, 0.24);
+      transform: translateY(var(--cord-pull));
+      transition: transform 280ms ease, box-shadow 280ms ease;
+    }
+
+    .pull-cord:hover .cord-handle {
+      box-shadow:
+        inset 0 2px 4px rgba(255, 255, 255, 0.7),
+        0 10px 22px rgba(0, 0, 0, 0.28);
+    }
+
+    .cord-note {
+      position: absolute;
+      left: 14px;
+      top: 254px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: rgba(255, 255, 255, 0.72);
+      font-size: 0.83rem;
+      letter-spacing: 0.03em;
+      backdrop-filter: blur(12px);
+    }
+
+    .switch-state {
+      position: absolute;
+      left: 20px;
+      top: 300px;
+      color: rgba(255, 255, 255, 0.82);
+      font-size: 0.9rem;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 22px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      width: fit-content;
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 16px rgba(248, 199, 116, 0.92);
+    }
+
+    h1 {
+      margin: 0 0 18px;
+      font-family: "Prata", serif;
+      font-size: clamp(3rem, 6vw, 5.7rem);
+      line-height: 0.98;
+      letter-spacing: 0.01em;
+      max-width: 10ch;
+    }
+
+    .hero p {
+      margin: 0;
+      max-width: 48ch;
+      font-size: clamp(1rem, 1.6vw, 1.13rem);
+      line-height: 1.78;
+      color: var(--muted);
+    }
+
+    .hint {
+      margin-top: 28px;
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 0.95rem;
+      width: fit-content;
+    }
+
+    .hint-mark {
+      width: 38px;
+      height: 38px;
+      display: inline-grid;
+      place-items: center;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .control-zone {
+      position: relative;
+      min-height: 700px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding-right: 10px;
+    }
+
+    .login-shell {
+      width: min(430px, calc(100vw - 72px));
+      padding: 28px;
+      border-radius: 34px;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.02) 24%),
+        var(--panel);
+      border: 1px solid var(--panel-border);
+      box-shadow:
+        0 30px 70px rgba(0, 0, 0, 0.44),
+        0 0 0 1px rgba(255, 248, 228, 0.04),
+        inset 0 1px 0 rgba(255, 255, 255, 0.16);
+      backdrop-filter: blur(28px);
+      opacity: var(--panel-opacity);
+      transform: translateX(var(--panel-offset)) scale(calc(0.96 + var(--panel-opacity) * 0.04));
+      pointer-events: none;
+      transition:
+        opacity 450ms ease,
+        transform 550ms cubic-bezier(0.18, 0.9, 0.22, 1),
+        box-shadow 500ms ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    body.is-on .login-shell {
+      pointer-events: auto;
+      box-shadow:
+        0 36px 90px rgba(0, 0, 0, 0.5),
+        0 0 0 1px rgba(255, 248, 228, 0.07),
+        0 0 38px rgba(248, 199, 116, 0.12),
+        inset 0 1px 0 rgba(255, 255, 255, 0.16);
+    }
+
+    .login-shell::before {
+      content: "";
+      position: absolute;
+      inset: -1px;
+      background: linear-gradient(135deg, rgba(255, 235, 191, 0.26), transparent 28%, transparent 70%, rgba(255, 225, 156, 0.18));
+      opacity: calc(var(--panel-opacity) * 0.95);
+      pointer-events: none;
+    }
+
+    .login-shell::after {
+      content: "";
+      position: absolute;
+      width: 280px;
+      height: 280px;
+      right: -110px;
+      top: -110px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255, 224, 158, 0.18), transparent 68%);
+      opacity: calc(var(--panel-opacity) * 0.88);
+      pointer-events: none;
+    }
+
+    .login-head {
+      position: relative;
+      z-index: 1;
+      margin-bottom: 24px;
+    }
+
+    .login-overline {
+      margin: 0 0 10px;
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: rgba(255, 255, 255, 0.56);
+    }
+
+    .login-title {
+      margin: 0;
+      font-family: "Prata", serif;
+      font-size: clamp(2rem, 3vw, 2.6rem);
+      line-height: 1.04;
+    }
+
+    .login-subtitle {
+      margin: 12px 0 0;
+      color: var(--muted);
+      line-height: 1.72;
+      font-size: 0.98rem;
+    }
+
+    .login-form {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      gap: 14px;
+    }
+
+    .field {
+      display: grid;
+      gap: 8px;
+    }
+
+    .field label {
+      font-size: 0.9rem;
+      color: rgba(255, 255, 255, 0.88);
+    }
+
+    .field input {
+      width: 100%;
+      padding: 15px 16px;
+      border-radius: 16px;
+      border: 1px solid var(--input-border);
+      background: var(--input-bg);
+      color: var(--text);
+      font: inherit;
+      transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+    }
+
+    .field input::placeholder {
+      color: rgba(255, 255, 255, 0.34);
+    }
+
+    .field input:focus {
+      outline: none;
+      border-color: var(--input-focus);
+      box-shadow: 0 0 0 4px rgba(248, 199, 116, 0.12);
+      transform: translateY(-1px);
+    }
+
+    .form-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-top: 2px;
+    }
+
+    .remember {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      color: rgba(255, 255, 255, 0.74);
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+
+    .remember input {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    .forgot {
+      color: var(--accent-strong);
+      text-decoration: none;
+      font-size: 0.9rem;
+    }
+
+    .forgot:hover {
+      text-decoration: underline;
+    }
+
+    .login-button {
+      margin-top: 6px;
+      padding: 16px 18px;
+      border: 0;
+      border-radius: 18px;
+      background: linear-gradient(135deg, #ffe9b8 0%, #f7c46a 48%, #efb34c 100%);
+      color: var(--button-text);
+      font: inherit;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      cursor: pointer;
+      box-shadow:
+        0 18px 28px rgba(239, 179, 76, 0.24),
+        inset 0 1px 0 rgba(255, 255, 255, 0.85);
+      transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease;
+    }
+
+    .login-button:hover {
+      transform: translateY(-2px);
+      box-shadow:
+        0 22px 34px rgba(239, 179, 76, 0.28),
+        inset 0 1px 0 rgba(255, 255, 255, 0.85);
+      filter: saturate(1.05);
+    }
+
+    .login-button:active {
+      transform: translateY(0);
+    }
+
+    .microcopy {
+      margin: 14px 0 0;
+      font-size: 0.85rem;
+      color: rgba(255, 255, 255, 0.58);
+      line-height: 1.6;
+      text-align: center;
+    }
+
+    .status-badge {
+      position: absolute;
+      right: 28px;
+      bottom: 24px;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: rgba(255, 255, 255, 0.74);
+      font-size: 0.82rem;
+      opacity: calc(0.36 + var(--panel-opacity) * 0.64);
+      transform: translateY(calc(10px - var(--panel-opacity) * 10px));
+      transition: opacity 450ms ease, transform 450ms ease;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 16px rgba(248, 199, 116, 0.84);
+    }
+
+    @media (max-width: 980px) {
+      body {
+        overflow-y: auto;
+      }
+
+      .scene {
+        padding: 18px;
+      }
+
+      .frame {
+        grid-template-columns: 1fr;
+        gap: 24px;
+      }
+
+      .hero {
+        min-height: auto;
+        padding: 304px 0 18px;
+      }
+
+      .lamp-area {
+        left: 50%;
+        transform: translateX(-50%);
+      }
+
+      .beam {
+        left: 50%;
+        transform: translateX(-50%);
+        width: min(100vw, 820px);
+        clip-path: polygon(42% 0, 58% 0, 100% 100%, 0 100%);
+      }
+
+      .control-zone {
+        min-height: auto;
+        justify-content: center;
+        padding-right: 0;
+        padding-bottom: 40px;
+      }
+
+      .status-badge {
+        position: static;
+        margin-top: 16px;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .scene {
+        padding: 14px;
+      }
+
+      .hero {
+        padding-top: 286px;
+      }
+
+      .lamp-area {
+        width: 270px;
+      }
+
+      .lamp-cable {
+        left: 116px;
+      }
+
+      .lamp-cap,
+      .lamp-bulb {
+        left: 96px;
+      }
+
+      .lamp-shade {
+        left: 56px;
+      }
+
+      .pull-cord {
+        left: 132px;
+      }
+
+      h1 {
+        max-width: 12ch;
+      }
+
+      .eyebrow,
+      .hint,
+      .hero p,
+      .login-subtitle,
+      .cord-note {
+        font-size: 0.92rem;
+      }
+
+      .login-shell {
+        width: 100%;
+        padding: 22px;
+        border-radius: 26px;
+      }
+
+      .form-row {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="scene">
+    <div class="backdrop"></div>
+    <div class="beam" aria-hidden="true"></div>
+
+    <section class="frame">
+      <section class="hero">
+        <div class="lamp-area">
+          <div class="lamp-rig" aria-hidden="true">
+            <div class="lamp-cable"></div>
+            <div class="lamp-cap"></div>
+            <div class="lamp-shade"></div>
+            <div class="lamp-bulb"></div>
+            <div class="lamp-pool"></div>
+          </div>
+
+          <button
+            class="pull-cord"
+            id="lightSwitch"
+            type="button"
+            aria-pressed="false"
+            aria-controls="loginPanel"
+            aria-label="拉绳开灯"
+          >
+            <span class="cord-line"></span>
+            <span class="cord-handle"></span>
+          </button>
+
+          <div class="cord-note">轻轻一拉，右侧登录框就会亮起</div>
+          <div class="switch-state" id="switchState">灯已关闭</div>
+        </div>
+
+        <div class="eyebrow">Interactive Lamp Login</div>
+        <h1>左边拉灯，右边登录界面亮出来。</h1>
+        <p>
+          这次交互改成了更直观的吊灯拉绳版本。左边是一盏可拉动的小灯，右边是登录面板，
+          开灯时卡片从右侧柔和浮现，关灯后整块界面安静退回夜色里。
+        </p>
+        <div class="hint">
+          <span class="hint-mark">i</span>
+          点击左边的拉绳小灯，触发右侧登录界面显隐。
+        </div>
+      </section>
+
+      <section class="control-zone">
+        <section class="login-shell" id="loginPanel" aria-hidden="true">
+          <header class="login-head">
+            <p class="login-overline">Members Access</p>
+            <h2 class="login-title">Light Room Login</h2>
+            <p class="login-subtitle">
+              灯光亮起后，输入你的账号信息，进入这个为夜色准备的空间。
+            </p>
+          </header>
+
+          <form class="login-form">
+            <div class="field">
+              <label for="email">邮箱地址</label>
+              <input id="email" type="email" placeholder="name@example.com">
+            </div>
+            <div class="field">
+              <label for="password">密码</label>
+              <input id="password" type="password" placeholder="请输入密码">
+            </div>
+
+            <div class="form-row">
+              <label class="remember">
+                <input type="checkbox">
+                记住我
+              </label>
+              <a class="forgot" href="#">忘记密码？</a>
+            </div>
+
+            <button class="login-button" type="submit">进入光影空间</button>
+          </form>
+
+          <p class="microcopy">这是演示登录页，点击按钮后会进入第二页面。</p>
+        </section>
+
+        <div class="status-badge" aria-live="polite">
+          <span class="status-dot"></span>
+          <span id="statusLabel">Room asleep</span>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <script>
+    const body = document.body;
+    const lightSwitch = document.getElementById("lightSwitch");
+    const loginPanel = document.getElementById("loginPanel");
+    const switchState = document.getElementById("switchState");
+    const statusLabel = document.getElementById("statusLabel");
+    const emailInput = document.getElementById("email");
+    const loginForm = document.querySelector(".login-form");
+
+    function setLightState(isOn) {
+      body.classList.toggle("is-on", isOn);
+      lightSwitch.setAttribute("aria-pressed", String(isOn));
+      loginPanel.setAttribute("aria-hidden", String(!isOn));
+      switchState.textContent = isOn ? "灯已打开" : "灯已关闭";
+      statusLabel.textContent = isOn ? "Room glowing" : "Room asleep";
+
+      if (isOn) {
+        window.setTimeout(() => emailInput.focus(), 260);
+      } else {
+        lightSwitch.focus();
+      }
+    }
+
+    lightSwitch.addEventListener("click", () => {
+      const isOn = !body.classList.contains("is-on");
+      setLightState(isOn);
+    });
+
+    loginForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const button = loginForm.querySelector(".login-button");
+      const originalText = button.textContent;
+      button.textContent = "欢迎回来";
+      button.disabled = true;
+
+      window.setTimeout(() => {
+        window.location.href = "./dashboard.html";
+        button.textContent = originalText;
+        button.disabled = false;
+      }, 900);
+    });
+
+    setLightState(false);
+  </script>
+</body>
+</html>

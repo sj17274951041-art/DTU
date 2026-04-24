@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Light Room Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Prata&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #090711;
+      --bg-deep: #161127;
+      --panel: rgba(22, 18, 35, 0.82);
+      --panel-border: rgba(255, 238, 193, 0.16);
+      --text: #f8f3e9;
+      --muted: rgba(248, 243, 233, 0.68);
+      --accent: #f6c265;
+      --accent-soft: rgba(246, 194, 101, 0.12);
+      --success: #7fe0b0;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+    }
+
+    body {
+      font-family: "Plus Jakarta Sans", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 16% 18%, rgba(246, 194, 101, 0.12), transparent 24%),
+        radial-gradient(circle at 78% 18%, rgba(85, 115, 255, 0.14), transparent 22%),
+        linear-gradient(135deg, var(--bg) 0%, var(--bg-deep) 56%, #04020b 100%);
+      padding: 28px;
+    }
+
+    .shell {
+      width: min(1180px, 100%);
+      margin: 0 auto;
+    }
+
+    .hero {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 28px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: var(--muted);
+      font-size: 0.78rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 18px;
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 14px rgba(246, 194, 101, 0.88);
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-family: "Prata", serif;
+      font-size: clamp(2.5rem, 5vw, 4.4rem);
+      line-height: 1.02;
+      max-width: 10ch;
+    }
+
+    .hero p {
+      margin: 0;
+      max-width: 52ch;
+      color: var(--muted);
+      line-height: 1.8;
+    }
+
+    .actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 148px;
+      padding: 14px 18px;
+      border-radius: 16px;
+      text-decoration: none;
+      font-weight: 700;
+      transition: transform 180ms ease, box-shadow 180ms ease;
+    }
+
+    .button-primary {
+      background: linear-gradient(135deg, #ffe9b8 0%, #f7c46a 52%, #efb34c 100%);
+      color: #24170f;
+      box-shadow: 0 18px 28px rgba(239, 179, 76, 0.2);
+    }
+
+    .button-secondary {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .button:hover {
+      transform: translateY(-2px);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 22px;
+    }
+
+    .card {
+      position: relative;
+      overflow: hidden;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02) 24%),
+        var(--panel);
+      border: 1px solid var(--panel-border);
+      border-radius: 28px;
+      padding: 24px;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 26px 56px rgba(0, 0, 0, 0.28);
+    }
+
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: -1px;
+      background: linear-gradient(140deg, rgba(255, 233, 184, 0.15), transparent 30%, transparent 70%, rgba(255, 233, 184, 0.08));
+      pointer-events: none;
+    }
+
+    .card h2,
+    .card h3 {
+      margin: 0 0 10px;
+    }
+
+    .card h2 {
+      font-family: "Prata", serif;
+      font-size: 1.8rem;
+    }
+
+    .card p,
+    .card li {
+      color: var(--muted);
+      line-height: 1.75;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 20px;
+    }
+
+    .stat {
+      padding: 16px;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .stat strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 1.4rem;
+      color: var(--text);
+    }
+
+    .status-row {
+      display: grid;
+      gap: 14px;
+    }
+
+    .status-chip {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 14px rgba(127, 224, 176, 0.88);
+      flex: 0 0 auto;
+    }
+
+    .timeline {
+      margin: 0;
+      padding-left: 18px;
+    }
+
+    .timeline li + li {
+      margin-top: 10px;
+    }
+
+    @media (max-width: 900px) {
+      .hero {
+        flex-direction: column;
+        align-items: start;
+      }
+
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .stats {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="hero">
+      <div>
+        <div class="eyebrow">Second Page</div>
+        <h1>已经进入第二页面。</h1>
+        <p>
+          这里是登录后的展示页，适合后续继续接后台、控制台、素材库或者业务数据。
+          先把结构和视觉气氛搭好，之后你要接真实功能，我们可以继续往上加。
+        </p>
+      </div>
+
+      <div class="actions">
+        <a class="button button-primary" href="./index.html">返回登录页</a>
+        <a class="button button-secondary" href="http://129.204.1.145/admin">打开管理面板</a>
+      </div>
+    </section>
+
+    <section class="grid">
+      <article class="card">
+        <h2>Light Room Control</h2>
+        <p>
+          现在这个站点已经具备一个完整的两段式体验：先通过交互式登录页进入，再落到第二页面。
+          如果你后面要接真正的账号系统，可以把这里替换成用户首页、订单页或者控制台。
+        </p>
+
+        <div class="stats">
+          <div class="stat">
+            <strong>2</strong>
+            <span>已部署页面</span>
+          </div>
+          <div class="stat">
+            <strong>1</strong>
+            <span>统一视觉主题</span>
+          </div>
+          <div class="stat">
+            <strong>Ready</strong>
+            <span>可继续扩展</span>
+          </div>
+        </div>
+      </article>
+
+      <aside class="status-row">
+        <section class="card">
+          <h3>当前状态</h3>
+          <div class="status-chip">
+            <span class="dot"></span>
+            <div>
+              <strong>网页在线结构已准备好</strong>
+              <div>可以继续接真实内容和业务功能。</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <h3>下一步建议</h3>
+          <ol class="timeline">
+            <li>绑定域名并配置 HTTPS。</li>
+            <li>决定首页是展示站、后台还是素材库。</li>
+            <li>接入真实登录接口或后台数据。</li>
+          </ol>
+        </section>
+      </aside>
+    </section>
+  </main>
+</body>
+</html>
